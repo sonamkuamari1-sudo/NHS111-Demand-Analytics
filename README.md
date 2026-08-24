@@ -163,7 +163,7 @@ The Executive Overview provides a high-level view of NHS111 call activity, inclu
 - Call-related KPI Volumes
 - Interactive Reporting Period, Region and Organisation filters
 
-![Executive Overview](Executive_Overview.png)
+![Executive Overview](Executive_Overview .png)
 
 ### Organisation Analysis
 
@@ -178,7 +178,7 @@ The Organisation Analysis page provides deeper organisation-level analysis, incl
 - Organisation Details
 - Interactive filtering and reset functionality
 
-![Organisation Analysis](Organisation_Analysis.png)
+![Organisation Analysis](Organisation_Analysis .png)
 
 ## Key Findings
 
