@@ -225,3 +225,7 @@ This project demonstrates an end-to-end analytics workflow, transforming raw NHS
 The project combines **Python for data preparation, SQL for analytical querying and validation, and Power BI for interactive reporting and visualisation**.
 
 A key part of the analysis was correctly separating **A01 calls received** from other KPI measures so that unrelated KPI values were not combined and misinterpreted as total NHS111 call demand.
+
+## Author
+
+**Sonam**
