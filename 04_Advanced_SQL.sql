@@ -9,20 +9,16 @@ GO
 SELECT
     ORG_NAME,
     SUM(VALUE) AS CallsReceived,
-
     RANK() OVER (
         ORDER BY SUM(VALUE) DESC
     ) AS OrganisationRank
-
 FROM dbo.Fact_IUCADC
-
 WHERE ITEM_NUMBER = 'A01'
   AND VALUE IS NOT NULL
-
 GROUP BY ORG_NAME
-
 ORDER BY OrganisationRank;
 GO
+
 
 ---------------------------------------------------------
 -- Query 2
@@ -32,18 +28,13 @@ GO
 SELECT
     REGION_NAME,
     SUM(VALUE) AS CallsReceived,
-
     DENSE_RANK() OVER (
         ORDER BY SUM(VALUE) DESC
     ) AS RegionRank
-
 FROM dbo.Fact_IUCADC
-
 WHERE ITEM_NUMBER = 'A01'
   AND VALUE IS NOT NULL
-
 GROUP BY REGION_NAME
-
 ORDER BY RegionRank;
 GO
 
@@ -53,7 +44,7 @@ GO
 -- Monthly calls received with running total
 ---------------------------------------------------------
 
-
+WITH MonthlyData AS (
     SELECT
         REPORTING_PERIOD,
 
@@ -79,10 +70,8 @@ GO
         SUM(VALUE) AS CallsReceived
 
     FROM dbo.Fact_IUCADC
-
     WHERE ITEM_NUMBER = 'A01'
       AND VALUE IS NOT NULL
-
     GROUP BY REPORTING_PERIOD
 )
 
@@ -106,7 +95,7 @@ GO
 -- Month-on-month change in calls received using LAG
 ---------------------------------------------------------
 
-
+WITH MonthlyData AS (
     SELECT
         REPORTING_PERIOD,
 
@@ -132,10 +121,8 @@ GO
         SUM(VALUE) AS CallsReceived
 
     FROM dbo.Fact_IUCADC
-
     WHERE ITEM_NUMBER = 'A01'
       AND VALUE IS NOT NULL
-
     GROUP BY REPORTING_PERIOD
 ),
 
@@ -171,47 +158,12 @@ ORDER BY MonthStart;
 GO
 
 
-WITH OrganisationKPI AS (
-    SELECT
-        ORG_NAME,
-        ITEM_NUMBER,
-        SUM(VALUE) AS KPIValue
-    FROM dbo.Fact_IUCADC
-    WHERE VALUE IS NOT NULL
-    GROUP BY
-        ORG_NAME,
-        ITEM_NUMBER
-),
-
-RankedKPI AS (
-    SELECT
-        ORG_NAME,
-        ITEM_NUMBER,
-        KPIValue,
-
-        ROW_NUMBER() OVER (
-            PARTITION BY ORG_NAME
-            ORDER BY KPIValue DESC
-        ) AS KPIPosition
-
-    FROM OrganisationKPI
-)
-
-SELECT
-    ORG_NAME,
-    ITEM_NUMBER,
-    KPIValue
-FROM RankedKPI
-WHERE KPIPosition = 1
-ORDER BY KPIValue DESC;
-GO
-
 ---------------------------------------------------------
 -- Query 5
 -- Highest call-related KPI volume by organisation
 ---------------------------------------------------------
 
-
+WITH OrganisationKPI AS (
     SELECT
         ORG_NAME,
         ITEM_NUMBER,
@@ -232,10 +184,12 @@ RankedKPI AS (
         ORG_NAME,
         ITEM_NUMBER,
         KPIValue,
+
         ROW_NUMBER() OVER (
             PARTITION BY ORG_NAME
             ORDER BY KPIValue DESC
         ) AS KPIPosition
+
     FROM OrganisationKPI
 )
 
@@ -247,12 +201,14 @@ FROM RankedKPI
 WHERE KPIPosition = 1
 ORDER BY KPIValue DESC;
 GO
-  ---------------------------------------------------------
+
+
+---------------------------------------------------------
 -- Query 6
 -- Regional share of total calls received (A01)
 ---------------------------------------------------------
 
-
+WITH RegionData AS (
     SELECT
         REGION_NAME,
         SUM(VALUE) AS CallsReceived
@@ -282,7 +238,7 @@ GO
 -- Top 10 contracts by calls received (A01)
 ---------------------------------------------------------
 
-
+WITH ContractData AS (
     SELECT
         CONTRACT_NAME,
         SUM(VALUE) AS CallsReceived
@@ -312,6 +268,7 @@ FROM RankedContracts
 WHERE ContractRank <= 10
 ORDER BY ContractRank;
 GO
+
 
 ---------------------------------------------------------
 -- Query 8
