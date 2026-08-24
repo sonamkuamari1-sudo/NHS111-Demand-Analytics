@@ -3,44 +3,54 @@ GO
 
 ---------------------------------------------------------
 -- Query 1
--- Rank NHS organisations by total recorded KPI value
+-- Rank NHS organisations by calls received (A01)
 ---------------------------------------------------------
 
 SELECT
     ORG_NAME,
-    SUM(VALUE) AS TotalRecordedValue,
+    SUM(VALUE) AS CallsReceived,
+
     RANK() OVER (
         ORDER BY SUM(VALUE) DESC
     ) AS OrganisationRank
+
 FROM dbo.Fact_IUCADC
-WHERE VALUE IS NOT NULL
+
+WHERE ITEM_NUMBER = 'A01'
+  AND VALUE IS NOT NULL
+
 GROUP BY ORG_NAME
+
 ORDER BY OrganisationRank;
 GO
 
-
 ---------------------------------------------------------
 -- Query 2
--- Rank NHS regions by total recorded KPI value
+-- Rank NHS regions by calls received (A01)
 ---------------------------------------------------------
 
 SELECT
     REGION_NAME,
-    SUM(VALUE) AS TotalRecordedValue,
+    SUM(VALUE) AS CallsReceived,
+
     DENSE_RANK() OVER (
         ORDER BY SUM(VALUE) DESC
     ) AS RegionRank
+
 FROM dbo.Fact_IUCADC
-WHERE VALUE IS NOT NULL
+
+WHERE ITEM_NUMBER = 'A01'
+  AND VALUE IS NOT NULL
+
 GROUP BY REGION_NAME
+
 ORDER BY RegionRank;
 GO
 
 
 ---------------------------------------------------------
 -- Query 3
--- Monthly total with correct chronological order
--- and a running total
+-- Monthly calls received with running total
 ---------------------------------------------------------
 
 WITH MonthlyData AS (
@@ -66,22 +76,25 @@ WITH MonthlyData AS (
             1
         ) AS MonthStart,
 
-        SUM(VALUE) AS MonthlyRecordedValue
+        SUM(VALUE) AS CallsReceived
 
     FROM dbo.Fact_IUCADC
-    WHERE VALUE IS NOT NULL
+
+    WHERE ITEM_NUMBER = 'A01'
+      AND VALUE IS NOT NULL
+
     GROUP BY REPORTING_PERIOD
 )
 
 SELECT
     REPORTING_PERIOD,
     MonthStart,
-    MonthlyRecordedValue,
+    CallsReceived,
 
-    SUM(MonthlyRecordedValue) OVER (
+    SUM(CallsReceived) OVER (
         ORDER BY MonthStart
         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-    ) AS RunningTotal
+    ) AS RunningTotalCalls
 
 FROM MonthlyData
 ORDER BY MonthStart;
@@ -90,7 +103,7 @@ GO
 
 ---------------------------------------------------------
 -- Query 4
--- Month-on-month change using LAG
+-- Month-on-month change in calls received using LAG
 ---------------------------------------------------------
 
 WITH MonthlyData AS (
@@ -116,10 +129,13 @@ WITH MonthlyData AS (
             1
         ) AS MonthStart,
 
-        SUM(VALUE) AS MonthlyRecordedValue
+        SUM(VALUE) AS CallsReceived
 
     FROM dbo.Fact_IUCADC
-    WHERE VALUE IS NOT NULL
+
+    WHERE ITEM_NUMBER = 'A01'
+      AND VALUE IS NOT NULL
+
     GROUP BY REPORTING_PERIOD
 ),
 
@@ -127,11 +143,11 @@ MonthlyComparison AS (
     SELECT
         REPORTING_PERIOD,
         MonthStart,
-        MonthlyRecordedValue,
+        CallsReceived,
 
-        LAG(MonthlyRecordedValue) OVER (
+        LAG(CallsReceived) OVER (
             ORDER BY MonthStart
-        ) AS PreviousMonthValue
+        ) AS PreviousMonthCalls
 
     FROM MonthlyData
 )
@@ -139,14 +155,14 @@ MonthlyComparison AS (
 SELECT
     REPORTING_PERIOD,
     MonthStart,
-    MonthlyRecordedValue,
-    PreviousMonthValue,
+    CallsReceived,
+    PreviousMonthCalls,
 
-    MonthlyRecordedValue - PreviousMonthValue AS AbsoluteChange,
+    CallsReceived - PreviousMonthCalls AS AbsoluteChange,
 
     CAST(
-        100.0 * (MonthlyRecordedValue - PreviousMonthValue)
-        / NULLIF(PreviousMonthValue, 0)
+        100.0 * (CallsReceived - PreviousMonthCalls)
+        / NULLIF(PreviousMonthCalls, 0)
         AS DECIMAL(10,2)
     ) AS MonthOnMonthChangePercent
 
@@ -154,11 +170,6 @@ FROM MonthlyComparison
 ORDER BY MonthStart;
 GO
 
-
----------------------------------------------------------
--- Query 5
--- Highest-value KPI code for each organisation
----------------------------------------------------------
 
 WITH OrganisationKPI AS (
     SELECT
@@ -195,57 +206,58 @@ WHERE KPIPosition = 1
 ORDER BY KPIValue DESC;
 GO
 
-
 ---------------------------------------------------------
 -- Query 6
--- Regional share of the overall recorded KPI value
+-- Regional share of total calls received (A01)
 ---------------------------------------------------------
 
 WITH RegionData AS (
     SELECT
         REGION_NAME,
-        SUM(VALUE) AS TotalRecordedValue
+        SUM(VALUE) AS CallsReceived
     FROM dbo.Fact_IUCADC
-    WHERE VALUE IS NOT NULL
+    WHERE ITEM_NUMBER = 'A01'
+      AND VALUE IS NOT NULL
     GROUP BY REGION_NAME
 )
 
 SELECT
     REGION_NAME,
-    TotalRecordedValue,
+    CallsReceived,
 
     CAST(
-        100.0 * TotalRecordedValue
-        / SUM(TotalRecordedValue) OVER ()
+        100.0 * CallsReceived
+        / SUM(CallsReceived) OVER ()
         AS DECIMAL(10,2)
-    ) AS ShareOfTotalPercent
+    ) AS ShareOfTotalCallsPercent
 
 FROM RegionData
-ORDER BY TotalRecordedValue DESC;
+ORDER BY CallsReceived DESC;
 GO
 
 
 ---------------------------------------------------------
 -- Query 7
--- Top 10 contracts using ROW_NUMBER
+-- Top 10 contracts by calls received (A01)
 ---------------------------------------------------------
 
 WITH ContractData AS (
     SELECT
         CONTRACT_NAME,
-        SUM(VALUE) AS TotalRecordedValue
+        SUM(VALUE) AS CallsReceived
     FROM dbo.Fact_IUCADC
-    WHERE VALUE IS NOT NULL
+    WHERE ITEM_NUMBER = 'A01'
+      AND VALUE IS NOT NULL
     GROUP BY CONTRACT_NAME
 ),
 
 RankedContracts AS (
     SELECT
         CONTRACT_NAME,
-        TotalRecordedValue,
+        CallsReceived,
 
         ROW_NUMBER() OVER (
-            ORDER BY TotalRecordedValue DESC
+            ORDER BY CallsReceived DESC
         ) AS ContractRank
 
     FROM ContractData
@@ -254,12 +266,11 @@ RankedContracts AS (
 SELECT
     ContractRank,
     CONTRACT_NAME,
-    TotalRecordedValue
+    CallsReceived
 FROM RankedContracts
 WHERE ContractRank <= 10
 ORDER BY ContractRank;
 GO
-
 
 ---------------------------------------------------------
 -- Query 8
