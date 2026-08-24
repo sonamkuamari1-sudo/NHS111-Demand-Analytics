@@ -207,6 +207,47 @@ ORDER BY KPIValue DESC;
 GO
 
 ---------------------------------------------------------
+-- Query 5
+-- Highest call-related KPI volume by organisation
+---------------------------------------------------------
+
+WITH OrganisationKPI AS (
+    SELECT
+        ORG_NAME,
+        ITEM_NUMBER,
+        SUM(VALUE) AS KPIValue
+    FROM dbo.Fact_IUCADC
+    WHERE VALUE IS NOT NULL
+      AND ITEM_NUMBER IN (
+          'A01', 'A02', 'A03', 'A05', 'A07',
+          'B01', 'B02', 'B03', 'B04', 'B05'
+      )
+    GROUP BY
+        ORG_NAME,
+        ITEM_NUMBER
+),
+
+RankedKPI AS (
+    SELECT
+        ORG_NAME,
+        ITEM_NUMBER,
+        KPIValue,
+        ROW_NUMBER() OVER (
+            PARTITION BY ORG_NAME
+            ORDER BY KPIValue DESC
+        ) AS KPIPosition
+    FROM OrganisationKPI
+)
+
+SELECT
+    ORG_NAME,
+    ITEM_NUMBER,
+    KPIValue
+FROM RankedKPI
+WHERE KPIPosition = 1
+ORDER BY KPIValue DESC;
+GO
+  ---------------------------------------------------------
 -- Query 6
 -- Regional share of total calls received (A01)
 ---------------------------------------------------------
