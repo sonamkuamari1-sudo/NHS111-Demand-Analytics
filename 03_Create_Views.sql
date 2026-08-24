@@ -13,12 +13,12 @@ GO
 CREATE OR ALTER VIEW dbo.vw_OrganisationDemand AS
 SELECT
     ORG_NAME,
-    SUM(VALUE) AS TotalDemand
+    SUM(VALUE) AS CallsReceived
 FROM dbo.Fact_IUCADC
-WHERE VALUE IS NOT NULL
+WHERE ITEM_NUMBER = 'A01'
+  AND VALUE IS NOT NULL
 GROUP BY ORG_NAME;
 GO
-
 
 /* =========================================================
    View 2: Region Demand
@@ -26,9 +26,10 @@ GO
 CREATE OR ALTER VIEW dbo.vw_RegionDemand AS
 SELECT
     REGION_NAME,
-    SUM(VALUE) AS TotalDemand
+    SUM(VALUE) AS CallsReceived
 FROM dbo.Fact_IUCADC
-WHERE VALUE IS NOT NULL
+WHERE ITEM_NUMBER = 'A01'
+  AND VALUE IS NOT NULL
 GROUP BY REGION_NAME;
 GO
 
@@ -39,9 +40,10 @@ GO
 CREATE OR ALTER VIEW dbo.vw_ContractDemand AS
 SELECT
     CONTRACT_NAME,
-    SUM(VALUE) AS TotalRecordedValue
+    SUM(VALUE) AS CallsReceived
 FROM dbo.Fact_IUCADC
-WHERE VALUE IS NOT NULL
+WHERE ITEM_NUMBER = 'A01'
+  AND VALUE IS NOT NULL
 GROUP BY CONTRACT_NAME;
 GO
 
@@ -58,7 +60,6 @@ WHERE VALUE IS NOT NULL
 GROUP BY ITEM_NUMBER;
 GO
 
-
 /* =========================================================
    View 5: Monthly Demand
    ========================================================= */
@@ -66,7 +67,7 @@ CREATE OR ALTER VIEW dbo.vw_MonthlyDemand AS
 SELECT
     REPORTING_PERIOD,
     DATEFROMPARTS(
-        RIGHT(REPORTING_PERIOD, 4),
+        TRY_CONVERT(INT, RIGHT(REPORTING_PERIOD, 4)),
         CASE SUBSTRING(REPORTING_PERIOD, 16, 3)
             WHEN 'JAN' THEN 1
             WHEN 'FEB' THEN 2
@@ -83,9 +84,9 @@ SELECT
         END,
         1
     ) AS ReportingDate,
-    SUM(VALUE) AS MonthlyDemand
+    SUM(VALUE) AS CallsReceived
 FROM dbo.Fact_IUCADC
-WHERE VALUE IS NOT NULL
+WHERE ITEM_NUMBER = 'A01'
+  AND VALUE IS NOT NULL
 GROUP BY REPORTING_PERIOD;
 GO
-
