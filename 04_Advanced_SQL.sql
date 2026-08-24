@@ -53,7 +53,7 @@ GO
 -- Monthly calls received with running total
 ---------------------------------------------------------
 
-WITH MonthlyData AS (
+
     SELECT
         REPORTING_PERIOD,
 
@@ -106,7 +106,7 @@ GO
 -- Month-on-month change in calls received using LAG
 ---------------------------------------------------------
 
-WITH MonthlyData AS (
+
     SELECT
         REPORTING_PERIOD,
 
@@ -211,7 +211,7 @@ GO
 -- Highest call-related KPI volume by organisation
 ---------------------------------------------------------
 
-WITH OrganisationKPI AS (
+
     SELECT
         ORG_NAME,
         ITEM_NUMBER,
@@ -252,7 +252,7 @@ GO
 -- Regional share of total calls received (A01)
 ---------------------------------------------------------
 
-WITH RegionData AS (
+
     SELECT
         REGION_NAME,
         SUM(VALUE) AS CallsReceived
@@ -282,7 +282,7 @@ GO
 -- Top 10 contracts by calls received (A01)
 ---------------------------------------------------------
 
-WITH ContractData AS (
+
     SELECT
         CONTRACT_NAME,
         SUM(VALUE) AS CallsReceived
